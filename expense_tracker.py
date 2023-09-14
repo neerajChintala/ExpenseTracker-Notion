@@ -100,7 +100,7 @@ bar_fig = go.Figure(go.Bar(x=df2["Categories"], y=df2["Expenses"]))
 pie_fig.show()
 bar_fig.show()
 
-mydate = datetime.datetime.now().strftime("%B")
+mydate = datetime.now().strftime("%B")
 # Save the figure to an HTML file
 html_file = f"Monthly-Report-{mydate}.html"
 
