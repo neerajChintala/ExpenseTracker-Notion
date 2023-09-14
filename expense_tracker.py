@@ -51,10 +51,16 @@ for page in pages:
     categories.append(props['Category']['rich_text'][0]['plain_text'])
     createdDates.append(datetime.datetime.strptime(props['Created']['created_time'],'%Y-%m-%dT%H:%M:%S.%fZ'))
 
-#df to create the initial dataframe from JSON
-df = pd.DataFrame.from_dict({'Name':names,'Categories':categories,'Expenses':expenses,'Created Date':createdDates})
-#df2 is grouped data to give sum of expeneses per day, per category
-df2 = df.groupby([df['Created Date'].dt.day,df.Categories])["Expenses"].sum().reset_index()
+#Getting current month's Data
+from datetime import datetime
+curr_month = datetime.now().month
+if curr_month <= 10:
+    curr_month = '0'+str(curr_month)
+# df to create the initial dataframe from JSON
+df = pd.DataFrame.from_dict({'Name': names, 'Categories': categories, 'Expenses': expenses, 'Created Date': createdDates})
+df = df[df['Created Date'].dt.strftime('%Y-%m') == f'{datetime.now().year}-{str(curr_month)}']
+# df2 is grouped data to give sum of expeneses per day, per category
+df2 = df.groupby([df['Created Date'].dt.day, df.Categories])["Expenses"].sum().reset_index()
 
 # Create a directed graph using networkx
 G = nx.from_pandas_edgelist(df2, "Created Date", "Categories", edge_attr="Expenses", create_using=nx.DiGraph())
