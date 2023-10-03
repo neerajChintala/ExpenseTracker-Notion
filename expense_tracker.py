@@ -10,12 +10,12 @@ import pandas as pd
 
 NOTION_TOKEN = ""
 DATABASE_ID = ""
-
 headers = {
     "Authorization": "Bearer " + NOTION_TOKEN,
     "Content-Type": "application/json",
     "Notion-Version": "2022-06-28",
 }
+
 
 def get_pages(num_pages=None):
     """
@@ -30,7 +30,7 @@ def get_pages(num_pages=None):
     response = requests.post(url, json=payload, headers=headers)
 
     data = response.json()
-    
+
     results = data["results"]
     while data["has_more"] and get_all:
         payload = {"page_size": page_size, "start_cursor": data["next_cursor"]}
@@ -41,23 +41,24 @@ def get_pages(num_pages=None):
 
     return results
 
+
 pages = get_pages()
-expenses,names,categories,createdDates = [],[],[],[]
+expenses, names, categories, createdDates = [], [], [], []
 for page in pages:
     props = page["properties"]
-    #fetch respective properties and append them into the respective lists
+    # fetch respective properties and append them into the respective lists
     names.append(props['Name']['title'][0]['text']['content'])
     expenses.append(props['Amount']['number'])
     categories.append(props['Category']['rich_text'][0]['plain_text'])
-    createdDates.append(datetime.datetime.strptime(props['Created']['created_time'],'%Y-%m-%dT%H:%M:%S.%fZ'))
-
+    createdDates.append(datetime.datetime.strptime(props['Date']['date']['start'], "%Y-%m-%d"))
 #Getting current month's Data
 from datetime import datetime
 curr_month = datetime.now().month
 if curr_month <= 10:
     curr_month = '0'+str(curr_month)
 # df to create the initial dataframe from JSON
-df = pd.DataFrame.from_dict({'Name': names, 'Categories': categories, 'Expenses': expenses, 'Created Date': createdDates})
+df = pd.DataFrame.from_dict(
+    {'Name': names, 'Categories': categories, 'Expenses': expenses, 'Created Date': createdDates})
 df = df[df['Created Date'].dt.strftime('%Y-%m') == f'{datetime.now().year}-{str(curr_month)}']
 # df2 is grouped data to give sum of expeneses per day, per category
 df2 = df.groupby([df['Created Date'].dt.day, df.Categories])["Expenses"].sum().reset_index()
@@ -67,7 +68,7 @@ G = nx.from_pandas_edgelist(df2, "Created Date", "Categories", edge_attr="Expens
 
 # Set up Sankey diagram using plotly.graph_objects
 sankey_fig = go.Figure(go.Sankey(
-    arrangement="perpendicular",
+    arrangement="snap",
     node=dict(
         pad=10,
         thickness=20,
@@ -90,15 +91,11 @@ sankey_fig.update_layout(
     paper_bgcolor='black'
 )
 
-# Show the Sankey diagram
-sankey_fig.show()
 # Set up Pie chart
 pie_fig = go.Figure(go.Pie(labels=df2["Categories"], values=df2["Expenses"]))
 
 # Set up Bar graph
 bar_fig = go.Figure(go.Bar(x=df2["Categories"], y=df2["Expenses"]))
-pie_fig.show()
-bar_fig.show()
 
 mydate = datetime.now().strftime("%B")
 # Save the figure to an HTML file
@@ -147,12 +144,9 @@ with open(html_file, "w") as file:
     file.write("</script>")
 
     file.write("</body></html>")
-
-
 # Email configuration
-email_from = "--@gmail.com"
-email_to = ["--xx@gmail.com", "xy--@gmail.com"]
-
+email_from = "expenserepo90@gmail.com"
+email_to = ["neerajchintala1@gmail.com", "vemparalakavya@gmail.com"]
 email_subject = f"Monthly-Report for {mydate}"
 print(email_subject)
 email_body = "Please find the Bi-Monthly report of your expenses"
@@ -173,8 +167,8 @@ with open(html_file, "rb") as file:
 # Send the email
 smtp_server = "smtp.gmail.com"
 smtp_port = 587
-smtp_username = "--@gmail.com"
-smtp_password = "**********"
+smtp_username = ""
+smtp_password = ""
 
 with smtplib.SMTP(smtp_server, smtp_port) as server:
     server.starttls()
